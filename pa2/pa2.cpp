@@ -2,15 +2,15 @@
 #include <string>
 using namespace std;
 
+/*CODE FOR ALGORITHMS*/
+
+/*END OF CODE OF ALGORITHMS*/
+
+/*CODE FOR LINKEDLIST*/
 struct node
 {
-	int data;
+	string data;
 	node *next;
-};
-
-class Page
-{
-	string programName;
 };
 
 class list
@@ -23,10 +23,10 @@ public:
 		head = NULL;
 		tail = NULL;
 	}
-	void createnode(int value);   //same logic used for insert at end of tail scenario 
+	void createnode(string value);   //same logic used for insert at end of tail scenario 
 	void display();
-	void insert_start(int value);   //insert at start of head scenario
-	void insert_position(int pos, int value);   //insert at specific position scenario
+	void insert_start(string value);   //insert at start of head scenario
+	void insert_position(int pos, string value);   //insert at specific position scenario
 	void delete_first();   //delete head first scenario
 	void delete_last();   //delete tail scenario
 	void delete_position(int pos);   //delete frm position scenario
@@ -74,7 +74,7 @@ void list::delete_first()
 	delete temp;
 }
 
-void list::insert_position(int pos, int value) {
+void list::insert_position(int pos, string value) {
 	node *pre = new node;
 	node *cur = new node;
 	node *temp = new node;
@@ -93,7 +93,7 @@ void list::insert_position(int pos, int value) {
 }
 
 //assigning new data value to current head position 
-void list::insert_start(int value)
+void list::insert_start(string value)
 {
 	node *temp = new node;
 	temp->data = value;
@@ -119,12 +119,13 @@ void list::display()
 	}
 }
 
-void list::createnode(int value)
+void list::createnode(string value)
 {
 	node *temp = new node;
 	temp->data = value;
 	temp->next = NULL;
 	//one node, then it is both head and tail of linkedlist
+
 	if (head == NULL) {
 		head = temp;
 		tail = temp;
@@ -137,6 +138,7 @@ void list::createnode(int value)
 		tail = temp;
 	}
 }
+/*END OF CODE FOR LINKEDLIST*/
 
 void myMenu(int *myChoice)
 {
@@ -161,9 +163,9 @@ void myMenu(int *myChoice)
 
 int main()
 {
-	list obj;
+	list * linkedList = new list();
 	for (int i = 0; i < 32; ++i) {
-		obj.createnode(i);
+		linkedList->createnode("FREE");
 	}
 	int myInput;
 	int * myChoice = &myInput;
@@ -187,17 +189,20 @@ int main()
 				cout << "Page size: " << pageSize << endl;
 			}
 			for (int i = 0; i < pageSize; ++i) {
-				obj.insert_start(0);
-				obj.delete_last();
+				linkedList->insert_start(pName);
+				linkedList->delete_last();
 			}
-			obj.display();
-			cout << endl;
+			//linkedList->display();
+			std::cout << endl;
+			std::cout << "Program " << pName << " added successfully: " << pageSize << " page(s) used." << endl;
+			std::cout << endl;
 			*myChoice = 0;
 			break;
 		}
 		case 2: {
 			//kill program
-			return 0;
+
+			break;
 		}
 		case 3: {
 			//fragmentation
@@ -205,14 +210,16 @@ int main()
 		}
 		case 4: {
 			//print memory
-			return 0;
+			linkedList->display();
+			*myChoice = 0;
+			break;
 		}
 		case 5: {
 			//exit 
 			return 0;
 		}
 		}
-	} while ((*myChoice!=0));
+	} while ((*myChoice==0));
 	system("pause");
 	return 0;
 }
