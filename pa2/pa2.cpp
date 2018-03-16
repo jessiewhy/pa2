@@ -1,144 +1,207 @@
+#include "pa2.h"
 #include <iostream>
 #include <string>
+#include <stdio.h>
 using namespace std;
 
-/*CODE FOR ALGORITHMS*/
-
-/*END OF CODE OF ALGORITHMS*/
-
-/*CODE FOR LINKEDLIST*/
-struct node
-{
-	string data;
-	node *next;
-};
-
-class list
-{
-private:
-	node * head, * tail;
-public:
-	list()
-	{
-		head = NULL;
-		tail = NULL;
+//start list implementation 
+list::list() {
+	head = NULL;
+	tail = NULL;
+	for (int i = 0; i < 32; ++i) {
+		insert("Free");
 	}
-	void createnode(string value);   //same logic used for insert at end of tail scenario 
-	void display();
-	void insert_start(string value);   //insert at start of head scenario
-	void insert_position(int pos, string value);   //insert at specific position scenario
-	void delete_first();   //delete head first scenario
-	void delete_last();   //delete tail scenario
-	void delete_position(int pos);   //delete frm position scenario
-};
+}
 
-void list::delete_position(int pos)
-{
-	node *current = new node;
-	node *previous = new node;
-	current = head;
-	for (int i = 1; i < pos; i++)
-	{
-		previous = current;
-		current = current->next;
+void list::insert(string value) {
+	if (head == NULL) {
+		head = new Page(value, 0);
+		return;
 	}
-	previous->next = current->next;
+	head->createPage(value);
 }
 
-void list::delete_last() {
-	node *current = new node;
-	node *previous = new node;
-	current = head;
-	//traverse until you reach tail of linkedlist 
-	while (current->next != NULL)
-	{
-		previous = current;
-		//current at tail of linkedlist
-		current = current->next;
+void list::add(string pName, int pSize, string pAlg) {
+	int availMem = head->checkAvailMem(pName);
+	bool consecSpace = head->checkConsecSpaces(pSize, pName);
+
+	if (availMem == -1) {
+		cout << '\n' << "Error, Program " << pName << " is already running." << '\n';
+		cout << endl;
+		return;
 	}
-	//set new tail of linkedlist
-	tail = previous;
-	previous->next = NULL;
-	//delete current tail of linkedlist
-	delete current;
+	else if (availMem < pSize || consecSpace==false ) {
+		cout << '\n' << "Error, Not enough memory for Program " << pName << '\n';
+		cout << endl;
+		return;
+	}
+	if (pAlg == "worst") {
+		head->worstAlg(pName, pSize, 0);
+	}
+	else {
+		head->bestAlg(pName, pSize, 0);
+	}
 }
 
-void list::delete_first()
-{
-	node *temp = new node;
-	//temp points to current head
-	temp = head;
-	//curr head points to second element
-	head = head->next;
-	//delete temp/"current head"
-	delete temp;
+void list::pKill(string pName) {
+	head->pkill(pName, 0);
 }
 
-void list::insert_position(int pos, string value) {
-	node *pre = new node;
-	node *cur = new node;
-	node *temp = new node;
-	cur = head;
-	//iterate to get to desired position
-	for (int i = 1; i < pos; i++) {
-		pre = cur;
-		cur = cur->next;
+void list::pFrag() {
+	head->pFrag(0);
+}
+
+void list::display() {
+	head->display(1);
+}
+
+//start "page" implementation
+Page::Page(string pName, int pSize) {
+	this->pName = pName;
+	this->pSize = pSize;
+	next = NULL;
+}
+
+void Page::createPage(string value) {
+	if (next == NULL) {
+		next = new Page(value, 0);
+		return;
+	}
+	next->createPage(value);
+}
+
+void Page::bestAlg(string pName, int pSize, int i) {
+	if (this->pName == "Free") {
+		this->pName = pName;
+		++i;
+		if (pSize > 4) {
+			bestAlg(pName, pSize - 4, i);
+			this->pSize = 4;
+		}
+		else {
+			this->pSize = pSize;
+			cout << '\n' << "Program " << pName << " added successfully: " << i << " page(s) used." << '\n' << endl;
+		}
+		return;
+	}
+	next->bestAlg(pName, pSize, i);
+
+}
+
+void Page::worstAlg(string pName, int pSize, int i) {
+	Page * temp = this;
+	Page * tail = this;
+
+	while (temp->next != NULL) {
+		if (temp->pName != "Free" and temp->next->pName == "Free") {
+			tail = temp->next;
+		}
+		temp = temp->next;
 	}
 
-	temp->data = value;
-	//pre next field has address of new node 
-	pre->next = temp;
-	//new next field has address of current node 
-	temp->next = cur;
+	tail->pName = pName;
+	i += 1;
+	
+	if (pSize > 4) {
+		worstAlg(pName, pSize - 4, i);
+		tail->pSize = 4;   
+	}
+	else {
+		tail->pSize = pSize;
+		cout << '\n' << "Program " << pName << " added successfully: " << i << " page(s) used." << '\n' << endl;
+	}
+	return;
 }
 
-//assigning new data value to current head position 
-void list::insert_start(string value)
-{
-	node *temp = new node;
-	temp->data = value;
-	temp->next = head;
-	head = temp;
+void Page::pkill(string pName, int i) {
+	if (this->pName == pName) {
+		this->pName = "Free";
+		pSize = 0;
+		++i;
+	}
+	if (next == NULL) {
+		cout << '\n' << "Program " << pName << " successfully killed, " << i << " pages reclaimed." << '\n' << endl;
+		return;
+	}
+	else {
+		next->pkill(pName, i);
+	}
 }
 
-//temp node, passes address of head node to it
-void list::display()
-{
-	node *temp = new node;
-	temp = head;
-	//iterate and print each node until we reach tail
+void Page::pFrag(int i) {
+	Page * temp = this;
+	while (temp->next != NULL) {
+		if ((temp->next == NULL || temp->next->pName == "Free") && (temp->pName != "Free")) {
+			++i;
+		}
+		temp = temp->next;
+	}
+	cout << '\n' << "There are " << i << " fragment(s)." << '\n' << endl;
+}
+
+void Page::display(int pIndex) {
+	Page * temp = this;
 	int fCounter = 0;
-	while (temp != NULL)
-	{
-		std::cout << temp->data << " ";
+	cout << endl;
+	while (temp != NULL) {
+		cout << temp->pName << " ";
 		temp = temp->next;
 		++fCounter;
-		if (fCounter%8 == 0) {
-			std::cout<<endl;
+		if (fCounter % 8 == 0) {
+			std::cout << endl;
 		}
 	}
+	cout << endl;
 }
 
-void list::createnode(string value)
-{
-	node *temp = new node;
-	temp->data = value;
-	temp->next = NULL;
-	//one node, then it is both head and tail of linkedlist
+int Page::checkAvailMem(string pName) {
+	Page * temp = this;
+	int i = 0;
 
-	if (head == NULL) {
-		head = temp;
-		tail = temp;
-		temp = NULL;
+	while (temp != NULL) {
+		if (temp->pName == pName) {
+			return -1;
+		}
+		else if (temp->pSize == 0) {
+			i += 4;
+		}
+		temp = temp->next;
 	}
-	//adding new node to end of tail of current linkedlist
-	else
+
+	return i;
+}
+
+bool Page::checkConsecSpaces(int pSize, string pName) {
+	Page * temp = this;
+	Page * current = this; //assuming already at head
+	temp = current;
+	int pageSize = 0;
+	if (pSize % 4 != 0) {
+		pageSize = (pSize / 4) + 1;
+	}
+	else {
+		pageSize = pSize / 4;
+	}
+	int count = 0;
+	for(int i = 0; i<pageSize; i++)
 	{
-		tail->next = temp;
-		tail = temp;
+		if (temp->pName == "Free"||temp->pName!=this->pName) {
+			while (temp->next != NULL) {
+				if(temp->pName=="Free"){
+					count++;
+				}
+				temp = temp->next;
+				if (count >= pageSize) {
+					return true;
+				}
+				else { false; }
+				
+			}
+		}
+		current = current->next;
+		temp = current;
 	}
 }
-/*END OF CODE FOR LINKEDLIST*/
 
 void myMenu(int *myChoice)
 {
@@ -161,65 +224,65 @@ void myMenu(int *myChoice)
 	}
 }
 
-int main()
+int main(int argc, char * argv[])
 {
 	list * linkedList = new list();
-	for (int i = 0; i < 32; ++i) {
-		linkedList->createnode("FREE");
-	}
+	string alg = "worst";
+
+	string pName;
+	int pSize;
 	int myInput;
 	int * myChoice = &myInput;
+	if (argc == 2) {
+		if (argv[1] == "worst") {
+			string alg = "worst";
+			cout << "Using worst algorithm" << endl;
+		}
+		if (argv[1] == "best") {
+			string alg = "best";
+			cout << "Using best algorithm" << endl;
+		}
+		else {
+			cout << "Invalid or missing arguments. Using default: best algorithm." << endl;
+		}
+	}
+
+
 	do {
 		myMenu(myChoice);
 		switch (*myChoice) {
 		case 1: {
-			string pName;
-			int pSize;
 			cout << "Program name: ";
 			cin >> pName;
 			cout << "Program size (KB) - ";
 			cin >> pSize;
-			int pageSize;
-			if (pSize % 4 != 0) {
-				pageSize = (pSize / 4) + 1;
-				cout << "Page size: " << pageSize << endl;
-			}
-			else {
-				pageSize = pSize / 4;
-				cout << "Page size: " << pageSize << endl;
-			}
-			for (int i = 0; i < pageSize; ++i) {
-				linkedList->insert_start(pName);
-				linkedList->delete_last();
-			}
-			//linkedList->display();
-			std::cout << endl;
-			std::cout << "Program " << pName << " added successfully: " << pageSize << " page(s) used." << endl;
-			std::cout << endl;
+			linkedList->add(pName, pSize, alg);
 			*myChoice = 0;
 			break;
 		}
 		case 2: {
-			//kill program
-
+			pName = "";
+			cout << "Program name - ";
+			cin >> pName;
+			linkedList->pKill(pName);
+			*myChoice = 0;
 			break;
 		}
 		case 3: {
-			//fragmentation
-			return 0;
+			linkedList->pFrag();
+			*myChoice = 0;
+			break;
 		}
 		case 4: {
-			//print memory
 			linkedList->display();
 			*myChoice = 0;
 			break;
 		}
 		case 5: {
-			//exit 
 			return 0;
 		}
 		}
-	} while ((*myChoice==0));
+	} while ((*myChoice == 0));
 	system("pause");
 	return 0;
 }
