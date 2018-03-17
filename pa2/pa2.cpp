@@ -36,7 +36,7 @@ void list::add(string pName, int pSize, string pAlg) {
 		return;
 	}
 	if (pAlg == "worst") {
-		head->worstAlg(pName, pSize, 0);
+		head->worstAlg(pName, pSize);
 	}
 	else {
 		head->bestAlg(pName, pSize, 0);
@@ -88,32 +88,118 @@ void Page::bestAlg(string pName, int pSize, int i) {
 
 }
 
-void Page::worstAlg(string pName, int pSize, int i) {
+void Page::worstAlg(string pName, int pSize) {
 	Page * temp = this;
-	Page * tail = this;
-
-	while (temp->next != NULL) {
-		if (temp->pName != "Free" and temp->next->pName == "Free") {
-			tail = temp->next;
-		}
-		temp = temp->next;
-	}
-
-	tail->pName = pName;
-	i += 1;
+	Page * newTemp = this;
+	string tempHole[32];    //temp holds linked list so we can find index of length of holes
+	int tempLengthHole[32];
+	int startPositionHolder[32];
+	int startIndex = 0;   //when a hole starts
+	int endIndex = 0;    //when a hole ends
+	int freeCounter = 0;
+	int fragmentCounter = 0;
+	int max = 0;   //keeps track of length of holes...looking for largest hole
 	
-	if (pSize > 4) {
-		worstAlg(pName, pSize - 4, i);
-		tail->pSize = 4;   
+	//storing linked list into array temporarily to find start and end of each hole in linkedlist
+	while (temp != NULL) {
+		for (int i = 0; i < 32; ++i) {
+			tempHole[i] = temp->pName;
+			temp = temp->next;
+		}
 	}
+
+	//knows which path to take depending on how many starting fragments list has
+	for (int i = 0; i < 32; ++i) {
+		if (tempHole[i] == "Free" &&tempHole[i + 1] != "Free") {
+			++fragmentCounter;
+		}
+	}
+	cout << fragmentCounter << endl;
+	
+	//for one fragment
+	if (fragmentCounter == 1) {
+		while (newTemp->pName != "Free") {
+			newTemp = newTemp->next;
+		}
+		for (int i = 0; i < pSize; ++i) {
+			newTemp->pName = pName;
+			newTemp = newTemp->next;
+
+		}
+
+	}
+	//for more than one fragment
 	else {
-		tail->pSize = pSize;
-		cout << '\n' << "Program " << pName << " added successfully: " << i << " page(s) used." << '\n' << endl;
+		for (int i = 0; i < fragmentCounter; ++i) {
+			for (int j = startIndex; j < 32; ++j) {
+				//case 1: until we reach a free
+				if (tempHole[j] != "Free" && tempHole[j + 1] == "Free") {
+					startIndex = j + 1;   //start index of hole
+					int k = startIndex;
+					while (tempHole[k] == "Free") {
+						++freeCounter;    //length of current hole
+						++k;
+					}
+					endIndex = k;    //where hole ended
+					startPositionHolder[j] = startIndex;   //at j index, hole began 
+					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+
+				}
+				//case 2: when we start at a free
+				else if (tempHole[j] == "Free" && j == 0) {
+					startIndex = j;
+					int k = startIndex;
+					while (tempHole[k] == "Free") {
+						++freeCounter;
+						++k;
+					}
+					endIndex = k;   //where hole ended
+					startPositionHolder[j] = startIndex;   //at j index, hole began 
+					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+				}
+				startIndex = endIndex;       //~keeping track of where to pick up next hole from
+			}
+		}
+		//find largest length hole
+		for (int i = 0; i < fragmentCounter; ++i) {
+			if (tempLengthHole[i] > max) {
+				max = tempLengthHole[i];   //max hole
+				startIndex = startPositionHolder[i];   //position of max hole 
+			}
+		}
+		//get to position in linked list of hole
+		//case 1: starts at beginning of list
+		if (startIndex == 0) {
+			newTemp->pName = pName;
+			for (int i = 0; i < pSize; ++i) {
+				newTemp->pName = pName;
+			}
+		}
+		//case 2: starts within list
+		else {
+			for (int i = 0; i < startIndex; ++i) {
+				newTemp = newTemp->next;
+			}
+			//add program to 
+			for (int i = 0; i < pSize; ++i) {
+				newTemp->pName = pName;
+			}
+		}
 	}
-	return;
+	cout << '\n' << "Program " << pName << " added successfully: " << pSize << " page(s) used." << '\n' << endl;
+}
+
+int Page::findContSize(string searchingFor, Page * Iterator) {
+	int count = 0;
+	while (Iterator!=NULL && Iterator->pName== searchingFor) {
+		++count;
+		Iterator->next;
+	}
+	return count;
 }
 
 void Page::pkill(string pName, int i) {
+	Page * temp = this;
 	if (this->pName == pName) {
 		this->pName = "Free";
 		pSize = 0;
@@ -175,15 +261,8 @@ bool Page::checkConsecSpaces(int pSize, string pName) {
 	Page * temp = this;
 	Page * current = this; //assuming already at head
 	temp = current;
-	int pageSize = 0;
-	if (pSize % 4 != 0) {
-		pageSize = (pSize / 4) + 1;
-	}
-	else {
-		pageSize = pSize / 4;
-	}
 	int count = 0;
-	for(int i = 0; i<pageSize; i++)
+	for(int i = 0; i<pSize; i++)
 	{
 		if (temp->pName == "Free"||temp->pName!=this->pName) {
 			while (temp->next != NULL) {
@@ -191,7 +270,7 @@ bool Page::checkConsecSpaces(int pSize, string pName) {
 					count++;
 				}
 				temp = temp->next;
-				if (count >= pageSize) {
+				if (count >= pSize) {
 					return true;
 				}
 				else { false; }
@@ -256,6 +335,14 @@ int main(int argc, char * argv[])
 			cin >> pName;
 			cout << "Program size (KB) - ";
 			cin >> pSize;
+			int pageSize = 0;
+			if (pSize % 4 != 0) {
+				pageSize = (pSize / 4) + 1;
+			}
+			else {
+				pageSize = pSize / 4;
+			}
+			pSize = pageSize;
 			linkedList->add(pName, pSize, alg);
 			*myChoice = 0;
 			break;

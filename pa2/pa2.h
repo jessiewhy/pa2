@@ -16,12 +16,13 @@ public:
 	Page(string pName, int pSize);
 	void createPage(string value);
 	void display(int pIndex);
-	void worstAlg(string pName, int pSize, int i);
+	void worstAlg(string pName, int pSize);
 	void bestAlg(string pName, int pSize, int i);
 	void pkill(string pName, int i);
 	void pFrag(int i);
 	int checkAvailMem(string pName);
 	bool checkConsecSpaces(int pSize, string pName);
+	int findContSize(string searchingFor, Page * Iterator);
 };
 
 class list
@@ -35,6 +36,7 @@ public:
 	void pFrag();
 	void add(string pName, int pSize, string pAlg);
 	void pKill(string pName);
+	
 };
 
 #endif /* pa2_hpp */#pragma once
