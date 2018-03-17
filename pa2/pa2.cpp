@@ -4,7 +4,7 @@
 #include <stdio.h>
 using namespace std;
 
-//start list implementation 
+/*START LIST IMPLEMENATION*/
 list::list() {
 	head = NULL;
 	tail = NULL;
@@ -21,30 +21,41 @@ void list::insert(string value) {
 	head->createPage(value);
 }
 
+//ADDING P2 AGAIN EVEN THO P2 IS ALREADY RUNNING
 void list::add(string pName, int pSize, string pAlg) {
-	int availMem = head->checkAvailMem(pName);
-	bool consecSpace = head->checkConsecSpaces(pSize, pName);
+	bool checkPRun = head->checkProgramRunning(pName);
 
-	if (availMem == -1) {
-		cout << '\n' << "Error, Program " << pName << " is already running." << '\n';
+	if (checkPRun == true) {
+		cout << '\n' << "Error, Program " << pName << " is already running." << '\n' << endl;
 		cout << endl;
 		return;
 	}
-	else if (availMem < pSize || consecSpace==false ) {
-		cout << '\n' << "Error, Not enough memory for Program " << pName << '\n';
-		cout << endl;
-		return;
-	}
+	
+	//see if biggest hole can fit reqest
 	if (pAlg == "worst") {
-		head->worstAlg(pName, pSize);
+		bool worstHole = head->checkHolesWorst(pName, pSize);
+		if (worstHole == true) {
+			head->worstAlg(pName, pSize);
+		}
+		else {
+			cout << '\n' << "Error, Not enough memory for Program " << pName << '\n' << endl;
+		}
 	}
-	else {
-		head->bestAlg(pName, pSize, 0);
+	//FIXME: see if smallest hole can fit request
+	if (pAlg == "best") {
+		bool bestHole = head->checkHolesBest(pName, pSize);
+		if (bestHole == true) {
+			head->bestAlg(pName, pSize);
+		}
+		else {
+			cout << '\n' << "Error, Not enough memory for Program " << pName << '\n' << endl;
+		}
 	}
 }
 
+//FIXME: NOT KILLING PROPERLY
 void list::pKill(string pName) {
-	head->pkill(pName, 0);
+	head->pKill(pName, 0);
 }
 
 void list::pFrag() {
@@ -55,7 +66,7 @@ void list::display() {
 	head->display(1);
 }
 
-//start "page" implementation
+/*START PAGE IMPLEMENTATION*/
 Page::Page(string pName, int pSize) {
 	this->pName = pName;
 	this->pSize = pSize;
@@ -70,22 +81,116 @@ void Page::createPage(string value) {
 	next->createPage(value);
 }
 
-void Page::bestAlg(string pName, int pSize, int i) {
-	if (this->pName == "Free") {
-		this->pName = pName;
-		++i;
-		if (pSize > 4) {
-			bestAlg(pName, pSize - 4, i);
-			this->pSize = 4;
-		}
-		else {
-			this->pSize = pSize;
-			cout << '\n' << "Program " << pName << " added successfully: " << i << " page(s) used." << '\n' << endl;
-		}
-		return;
-	}
-	next->bestAlg(pName, pSize, i);
+//FIX ME: STILL USING WORST ALG
+void Page::bestAlg(string pName, int pSize) {
+	Page * temp = this;
+	int counter = 0;
+	Page * newTemp = this;
+	string tempHole[32];    //temp holds linked list so we can find index of length of holes
+	int tempLengthHole[32];
+	int startPositionHolder[32];
+	int startIndex = 0;   //when a hole starts
+	int endIndex = 0;    //when a hole ends
+	int freeCounter = 0;
+	int fragmentCounter = 0;
+	int min = 0;   //keeps track of length of holes...looking for smallest hole
 
+	//storing linked list into array temporarily to find start and end of each hole in linkedlist
+	while (temp != NULL) {
+		for (int i = 0; i < 32; ++i) {
+			tempHole[i] = temp->pName;
+			temp = temp->next;
+		}
+	}
+
+	//knows which path to take depending on how many starting fragments list has
+	for (int i = 0; i < 32; ++i) {
+		if (tempHole[i] == "Free" &&tempHole[i + 1] != "Free") {
+			++fragmentCounter;
+		}
+	}
+
+	//for one fragment
+	if (fragmentCounter == 1) {
+		while (newTemp->pName != "Free") {
+			newTemp = newTemp->next;
+		}
+		for (int i = 0; i < pSize; ++i) {
+			newTemp->pName = pName;
+			newTemp = newTemp->next;
+
+		}
+
+	}
+	//if fragment is > 1, then find each hole, make sure hole >= pSize, from that list find smallest hole
+	else {
+		for (int i = 0; i < fragmentCounter; ++i) {
+			for (int j = startIndex; j < 32; ++j) {
+				//case 1: until we reach a free
+				if (tempHole[j] != "Free" && tempHole[j + 1] == "Free") {
+					startIndex = j + 1;   //start index of hole
+					int k = startIndex;
+					while (tempHole[k] == "Free") {
+						++freeCounter;    //length of current hole
+						++k;
+					}
+					endIndex = k;    //where hole ended
+					startPositionHolder[j] = startIndex;   //at j index, hole began 
+					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+
+				}
+				//case 2: when we start at a free
+				else if (tempHole[j] == "Free" && j == 0) {
+					startIndex = j;
+					int k = startIndex;
+					while (tempHole[k] == "Free") {
+						++freeCounter;
+						++k;
+					}
+					endIndex = k;   //where hole ended
+					startPositionHolder[j] = startIndex;   //at j index, hole began 
+					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+				}
+				startIndex = endIndex;       //~keeping track of where to pick up next hole from
+			}
+		}
+
+		//find smallest length
+		for (int i = 0; i < fragmentCounter; ++i) {
+			if (tempLengthHole[i] >= pSize) {
+				min = tempLengthHole[i];   //start of possible mins
+				for (int j = 0; j < fragmentCounter; ++j) {
+					if (tempLengthHole[j] < tempLengthHole[i]) {
+						min = tempLengthHole[j];
+						startIndex = startPositionHolder[j];   //position of min hole 
+					}
+				}
+			}
+		}
+
+		//get to position in linked list of hole
+		//case 1: starts at beginning of list
+		if (startIndex == 0) {
+			newTemp->pName = pName;
+			for (int i = 0; i < pSize; ++i) {
+				newTemp->pName = pName;
+				newTemp = newTemp->next;
+			}
+		}
+
+		//case 2: starts within list
+		else {
+			for (int i = 0; i < startIndex; ++i) {
+				newTemp = newTemp->next;
+			}
+			//add program to 
+			for (int i = 0; i < pSize; ++i) {
+				newTemp->pName = pName;
+				newTemp = newTemp->next;
+			}
+		}
+	}
+	cout << '\n' << "Program " << pName << " added successfully: " << pSize << " page(s) used." << '\n' << endl;
 }
 
 void Page::worstAlg(string pName, int pSize) {
@@ -114,7 +219,6 @@ void Page::worstAlg(string pName, int pSize) {
 			++fragmentCounter;
 		}
 	}
-	cout << fragmentCounter << endl;
 	
 	//for one fragment
 	if (fragmentCounter == 1) {
@@ -126,8 +230,8 @@ void Page::worstAlg(string pName, int pSize) {
 			newTemp = newTemp->next;
 
 		}
-
 	}
+
 	//for more than one fragment
 	else {
 		for (int i = 0; i < fragmentCounter; ++i) {
@@ -173,6 +277,7 @@ void Page::worstAlg(string pName, int pSize) {
 			newTemp->pName = pName;
 			for (int i = 0; i < pSize; ++i) {
 				newTemp->pName = pName;
+				newTemp = newTemp->next;
 			}
 		}
 		//case 2: starts within list
@@ -183,34 +288,31 @@ void Page::worstAlg(string pName, int pSize) {
 			//add program to 
 			for (int i = 0; i < pSize; ++i) {
 				newTemp->pName = pName;
+				newTemp = newTemp->next;
 			}
 		}
 	}
 	cout << '\n' << "Program " << pName << " added successfully: " << pSize << " page(s) used." << '\n' << endl;
 }
 
-int Page::findContSize(string searchingFor, Page * Iterator) {
-	int count = 0;
-	while (Iterator!=NULL && Iterator->pName== searchingFor) {
-		++count;
-		Iterator->next;
-	}
-	return count;
-}
-
-void Page::pkill(string pName, int i) {
+void Page::pKill(string pName, int i) {
 	Page * temp = this;
+	
 	if (this->pName == pName) {
 		this->pName = "Free";
 		pSize = 0;
 		++i;
+	}
+	if (i == 0) {
+		cout << '\n' << "Error, " << pName << " not running, " << i << " pages reclaimed." << '\n' << endl;
+		return;
 	}
 	if (next == NULL) {
 		cout << '\n' << "Program " << pName << " successfully killed, " << i << " pages reclaimed." << '\n' << endl;
 		return;
 	}
 	else {
-		next->pkill(pName, i);
+		next->pKill(pName, i);
 	}
 }
 
@@ -240,45 +342,194 @@ void Page::display(int pIndex) {
 	cout << endl;
 }
 
-int Page::checkAvailMem(string pName) {
+bool Page::checkProgramRunning(string pName) {
 	Page * temp = this;
-	int i = 0;
 
 	while (temp != NULL) {
+		//case 1: checking whether program is running or not
 		if (temp->pName == pName) {
-			return -1;
+			return true;
 		}
-		else if (temp->pSize == 0) {
-			i += 4;
-		}
-		temp = temp->next;
+		return false;
 	}
-
-	return i;
 }
 
-bool Page::checkConsecSpaces(int pSize, string pName) {
+bool Page::checkHolesWorst(string pName, int pSize) {
 	Page * temp = this;
-	Page * current = this; //assuming already at head
-	temp = current;
-	int count = 0;
-	for(int i = 0; i<pSize; i++)
-	{
-		if (temp->pName == "Free"||temp->pName!=this->pName) {
-			while (temp->next != NULL) {
-				if(temp->pName=="Free"){
-					count++;
+	int counter = 0;
+	Page * newTemp = this;
+	string tempHole[32];    //temp holds linked list so we can find index of length of holes
+	int tempLengthHole[32];
+	int startPositionHolder[32];
+	int startIndex = 0;   //when a hole starts
+	int endIndex = 0;    //when a hole ends
+	int freeCounter = 0;
+	int fragmentCounter = 0;
+	int max = 0;   //keeps track of length of holes...looking for largest hole
+
+	//storing linked list into array temporarily to find start and end of each hole in linkedlist
+	while (temp != NULL) {
+		for (int i = 0; i < 32; ++i) {
+			tempHole[i] = temp->pName;
+			temp = temp->next;
+		}
+	}
+
+	//knows which path to take depending on how many starting fragments list has
+	for (int i = 0; i < 32; ++i) {
+		if (tempHole[i] == "Free" &&tempHole[i + 1] != "Free") {
+			++fragmentCounter;
+		}
+	}
+	cout << fragmentCounter << endl;
+
+	//if fragment is only one, then just check to make sure this is enough "free" to handle process
+	if (fragmentCounter == 1) {
+		for(int i=0;i<32;++i) {
+			if (tempHole[i] != "Free") {
+				++i;
+			}
+			else { ++counter; }
+		}
+		if (counter >= pSize) {
+			return true;
+		}
+		else return false;
+	}
+
+	//if fragment is > 1, then find each hole, find largest hole, make sure largest hole can hold process
+	else {
+		for (int i = 0; i < fragmentCounter; ++i) {
+			for (int j = startIndex; j < 32; ++j) {
+				//case 1: until we reach a free
+				if (tempHole[j] != "Free" && tempHole[j + 1] == "Free") {
+					startIndex = j + 1;   //start index of hole
+					int k = startIndex;
+					while (tempHole[k] == "Free") {
+						++freeCounter;    //length of current hole
+						++k;
+					}
+					endIndex = k;    //where hole ended
+					startPositionHolder[j] = startIndex;   //at j index, hole began 
+					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+
 				}
-				temp = temp->next;
-				if (count >= pSize) {
-					return true;
+				//case 2: when we start at a free
+				else if (tempHole[j] == "Free" && j == 0) {
+					startIndex = j;
+					int k = startIndex;
+					while (tempHole[k] == "Free") {
+						++freeCounter;
+						++k;
+					}
+					endIndex = k;   //where hole ended
+					startPositionHolder[j] = startIndex;   //at j index, hole began 
+					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
 				}
-				else { false; }
-				
+				startIndex = endIndex;       //~keeping track of where to pick up next hole from
 			}
 		}
-		current = current->next;
-		temp = current;
+		//find largest length hole
+		for (int i = 0; i < fragmentCounter; ++i) {
+			if (tempLengthHole[i] > max) {
+				max = tempLengthHole[i];   //max hole
+				startIndex = startPositionHolder[i];   //position of max hole 
+			}
+		}
+		if (max >= pSize) {
+			return true;
+		}
+		else return false;
+	}
+
+}
+
+bool Page::checkHolesBest(string pName, int pSize){
+	Page * temp = this;
+	int counter = 0;
+	Page * newTemp = this;
+	string tempHole[32];    //temp holds linked list so we can find index of length of holes
+	int tempLengthHole[32];
+	int startPositionHolder[32];
+	int startIndex = 0;   //when a hole starts
+	int endIndex = 0;    //when a hole ends
+	int freeCounter = 0;
+	int fragmentCounter = 0;
+	int min = 32;   //keeps track of length of holes...looking for smallest hole
+
+	//storing linked list into array temporarily to find start and end of each hole in linkedlist
+	while (temp != NULL) {
+		for (int i = 0; i < 32; ++i) {
+			tempHole[i] = temp->pName;
+			temp = temp->next;
+		}
+	}
+
+	//knows which path to take depending on how many starting fragments list has
+	for (int i = 0; i < 32; ++i) {
+		if (tempHole[i] == "Free" &&tempHole[i + 1] != "Free") {
+			++fragmentCounter;
+		}
+	}
+	cout << fragmentCounter << endl;
+
+	//if fragment is only one, then just check to make sure this is enough "free" to handle process
+	if (fragmentCounter == 1) {
+		for (int i = 0; i<32; ++i) {
+			if (tempHole[i] != "Free") {
+				++i;
+			}
+			else { ++counter; }
+		}
+		if (counter >= pSize) {
+			return true;
+		}
+		else return false;
+	}
+
+	//if fragment is > 1, then find each hole, find smalleset hole, find smallest hole >= pSize
+	else {
+		for (int i = 0; i < fragmentCounter; ++i) {
+			for (int j = startIndex; j < 32; ++j) {
+				//case 1: until we reach a free
+				if (tempHole[j] != "Free" && tempHole[j + 1] == "Free") {
+					startIndex = j + 1;   //start index of hole
+					int k = startIndex;
+					while (tempHole[k] == "Free") {
+						++freeCounter;    //length of current hole
+						++k;
+					}
+					endIndex = k;    //where hole ended
+					startPositionHolder[j] = startIndex;   //at j index, hole began 
+					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+
+				}
+				//case 2: when we start at a free
+				else if (tempHole[j] == "Free" && j == 0) {
+					startIndex = j;
+					int k = startIndex;
+					while (tempHole[k] == "Free") {
+						++freeCounter;
+						++k;
+					}
+					endIndex = k;   //where hole ended
+					startPositionHolder[j] = startIndex;   //at j index, hole began 
+					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+				}
+				startIndex = endIndex;       //~keeping track of where to pick up next hole from
+			}
+		}
+		//find smallest length
+		for (int i = 0; i < fragmentCounter; ++i) {
+			if (tempLengthHole[i] < min && tempLengthHole[i]>= pSize) {
+				min = tempLengthHole[i];   //min hole
+				startIndex = startPositionHolder[i];   //position of min hole 
+			}
+		}
+		if (min >= pSize) {
+			return true;
+		}
+		else return false;
 	}
 }
 
@@ -306,7 +557,7 @@ void myMenu(int *myChoice)
 int main(int argc, char * argv[])
 {
 	list * linkedList = new list();
-	string alg = "worst";
+	string alg = "best";
 
 	string pName;
 	int pSize;

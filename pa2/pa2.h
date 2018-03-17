@@ -17,12 +17,12 @@ public:
 	void createPage(string value);
 	void display(int pIndex);
 	void worstAlg(string pName, int pSize);
-	void bestAlg(string pName, int pSize, int i);
-	void pkill(string pName, int i);
+	void bestAlg(string pName, int pSize);
+	void pKill(string pName, int i);
 	void pFrag(int i);
-	int checkAvailMem(string pName);
-	bool checkConsecSpaces(int pSize, string pName);
-	int findContSize(string searchingFor, Page * Iterator);
+	bool checkProgramRunning(string pName);
+	bool checkHolesWorst(string pName, int pSize);
+	bool checkHolesBest(string pName, int pSize);
 };
 
 class list
