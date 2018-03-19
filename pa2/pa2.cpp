@@ -27,13 +27,11 @@ void list::add(string pName, int pSize, string pAlg) {
 
 	if (checkPRun == true) {
 		cout << '\n' << "Error, Program " << pName << " is already running." << '\n' << endl;
-		cout << endl;
 		return;
 	}
 
 	if (checkHole == false) {
 		cout << '\n' << "Error, Not enough memory for Program " << pName << '\n' << endl;
-		cout << endl;
 		return;
 	}
 	
@@ -50,7 +48,8 @@ void list::add(string pName, int pSize, string pAlg) {
 void list::pKill(string pName) {
 	bool checkPR = head->checkProgramRunning(pName);
 	if (checkPR == false) {
-		cout << '\n' << "Error, Program " << pName << " not running. 0 programs killed." << '\n' << endl;
+		cout << '\n' << "Error, Program " << pName << " not running. 0 program(s) killed." << '\n' << endl;
+		return;
 	}
 	else {
 		head->pKill(pName, 0);
@@ -58,7 +57,7 @@ void list::pKill(string pName) {
 }
 
 void list::pFrag() {
-	head->pFrag(0);
+	head->pFrag(1);
 }
 
 void list::display() {
@@ -88,6 +87,8 @@ void Page::bestAlg(string pName, int pSize) {
 	string tempHole[32];    //temp holds linked list so we can find index of length of holes
 	int tempLengthHole[32];    //holds the length of each hole
 	int startPositionHolder[32];    //holds our start indexes
+	int possibleArray[32];    //possible holes for process
+	int possibleIndex[32];    //start index of possible holes
 	int startIndex = 0;   //when a hole starts
 	int endIndex = 0;    //when a hole ends
 	int freeCounter = 0;
@@ -133,14 +134,14 @@ void Page::bestAlg(string pName, int pSize) {
 						++freeCounter;    //length of current hole
 						++k;
 					}
-					if (k>32) {   //if hole ends at end of list
+					if (k>=32) {   //if hole ends at end of list
 						endIndex = 0;
 					}
 					else {
 						endIndex = k;   
 					}
-					startPositionHolder[j] = startIndex;   //at j index, hole began 
-					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+					startPositionHolder[j+1] = startIndex;   //at j index, hole began 
+					tempLengthHole[j+1] = freeCounter;      //at j index, hole is length of freeCounter
 					freeCounter = 0;    //rest freeCounter
 
 				}
@@ -167,18 +168,21 @@ void Page::bestAlg(string pName, int pSize) {
 		//FIXME: double check 
 		//find smallest length
 		for (int i = 0; i < 32; ++i) {
-			min = tempLengthHole[0];
-			for (int j = 0; j < 32; ++j) {
-				if (tempLengthHole[j]<min && tempLengthHole[j]>=pSize){
-					min = tempLengthHole[j];   //update min hole
-					startIndex = startPositionHolder[j];
-				}
-				else {
-					min = min;
-					break;
-				}
+			if (tempLengthHole[i] >= pSize) {
+				possibleArray[i] = tempLengthHole[i];
+				possibleIndex[i] = startPositionHolder[i];
 			}
-			startIndex = startPositionHolder[i];
+		}
+
+		//faulty for odd reasons...
+		min = possibleArray[0];
+		startIndex = possibleIndex[0];
+		for (int i = 0; i < 32; ++i) {
+			if (possibleArray[i]<min) {
+				min = possibleArray[i];
+				startIndex = possibleIndex[i];
+			}
+				   
 		}
 
 		//get to position in linked list of hole
@@ -341,7 +345,7 @@ void Page::pKill(string pName, int i) {
 void Page::pFrag(int i) {
 	Page * temp = this;
 	while (temp->next != NULL) {
-		if ((temp->next == NULL || temp->next->pName == "Free") && (temp->pName != "Free")) {
+		if ((temp->next == NULL || temp->pName == "Free") && (temp->next->pName != "Free")) {
 			++i;
 		}
 		temp = temp->next;
