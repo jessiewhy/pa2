@@ -48,7 +48,13 @@ void list::add(string pName, int pSize, string pAlg) {
 }
 
 void list::pKill(string pName) {
-	head->pKill(pName, 0);
+	bool checkPR = head->checkProgramRunning(pName);
+	if (checkPR == false) {
+		cout << '\n' << "Error, Program " << pName << " not running. 0 programs killed." << '\n' << endl;
+	}
+	else {
+		head->pKill(pName, 0);
+	}
 }
 
 void list::pFrag() {
@@ -74,7 +80,7 @@ void Page::createPage(string value) {
 	next->createPage(value);
 }
 
-//double checking...
+//double checking...3.18.18 note: did not have time to finish. 
 void Page::bestAlg(string pName, int pSize) {
 	Page * temp = this;
 	int counter = 0;
@@ -103,7 +109,6 @@ void Page::bestAlg(string pName, int pSize) {
 			++fragmentCounter;
 		}
 	}
-	cout << fragmentCounter << endl;
 
 	//for one fragment
 	if (fragmentCounter == 1) {
@@ -254,7 +259,7 @@ void Page::worstAlg(string pName, int pSize) {
 						++freeCounter;    //length of current hole
 						++k;
 					}
-					if (k>32) {   //if hole ends at end of list
+					if (k>=32) {   //if hole ends at end of list
 						endIndex = 0;
 					}
 					else {
@@ -285,6 +290,7 @@ void Page::worstAlg(string pName, int pSize) {
 				}
 			}
 		}
+
 		//find largest length hole
 		for (int i = 0; i < 32; ++i) {
 			if (tempLengthHole[i] > max) {
@@ -316,7 +322,6 @@ void Page::worstAlg(string pName, int pSize) {
 	cout << '\n' << "Program " << pName << " added successfully: " << pSize << " page(s) used." << '\n' << endl;
 }
 
-//FIXME: find a way to show an error message where there are zero programs to kill
 void Page::pKill(string pName, int i) {
 	Page * temp = this;
 	if (this->pName == pName) {
@@ -401,7 +406,7 @@ bool Page::checkHole(int pSize) {
 					++freeCounter;   //keep track of length of hole
 					++k;     //there is at least one hole
 				}
-				if (k>32) {   //if hole ends at end of lis
+				if (k>=32) {   //if hole ends at end of list
 					end = 0;
 				}
 				else {
@@ -419,7 +424,7 @@ bool Page::checkHole(int pSize) {
 					++freeCounter;    //length of current hole
 					++k;
 				}
-				if (k>32) {   //if hole ends at end of lis
+				if (k>=32) {   //if hole ends at end of lis
 					end = 0;
 				}
 				else {
