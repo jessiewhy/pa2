@@ -468,18 +468,18 @@ int main(int argc, char * argv[])
 
 	if (argc == 2) {
 		if (strncmp(argv[1], "worst", 5) == 0) {
-			std::cout << "Using worst fit algorithm. \n";
+			std::cout << "Using worst fit algorithm. \n" << endl;
 			alg = "worst";
 		}
 		else if (strncmp(argv[1], "best", 4) == 0) {
-			cout << "Using best fit algorithm. \n";
+			cout << "Using best fit algorithm. \n" << endl;
 		}
 		else {
-			cout << "Invalid or missing arguments. Using default: best fit algorithm \n";
+			cout << "Invalid or missing arguments. Using default: best fit algorithm \n" << endl;
 		}
 	}
 	else {
-		std::cout << "Invalid or missing arguments. Using default: best fit algorithm \n";
+		std::cout << "Invalid or missing arguments. Using default: best fit algorithm \n" << endl;
 	}
 
 	string pName;
