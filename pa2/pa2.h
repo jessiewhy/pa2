@@ -21,8 +21,7 @@ public:
 	void pKill(string pName, int i);
 	void pFrag(int i);
 	bool checkProgramRunning(string pName);
-	bool checkHolesWorst(string pName, int pSize);
-	bool checkHolesBest(string pName, int pSize);
+	bool checkHole(int pSize);
 };
 
 class list
