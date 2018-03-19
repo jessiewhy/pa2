@@ -147,7 +147,7 @@ void Page::bestAlg(string pName, int pSize) {
 						++freeCounter;
 						++k;
 					}
-					if (k>32) {   //if hole ends at end of lis
+					if (k>=32) {   //if hole ends at end of lis
 						endIndex = 0;
 					}
 					else {
@@ -164,14 +164,18 @@ void Page::bestAlg(string pName, int pSize) {
 		for (int i = 0; i < 32; ++i) {
 			min = tempLengthHole[0];
 			for (int j = 0; j < 32; ++j) {
-				if (tempLengthHole[j] < min && tempLengthHole[j] >= pSize) {
+				if (tempLengthHole[j]<min && tempLengthHole[j]>=pSize){
 					min = tempLengthHole[j];   //update min hole
-					startIndex = startPositionHolder[j];   //position of min hole
+					startIndex = startPositionHolder[j];
+				}
+				else {
+					min = min;
+					break;
 				}
 			}
+			startIndex = startPositionHolder[i];
 		}
 
-		//FIXME: ISSUE HERE
 		//get to position in linked list of hole
 		//case 1: starts at beginning of list
 		if (startIndex == 0) {
@@ -250,9 +254,15 @@ void Page::worstAlg(string pName, int pSize) {
 						++freeCounter;    //length of current hole
 						++k;
 					}
-					endIndex = k;    //where hole ended
+					if (k>32) {   //if hole ends at end of list
+						endIndex = 0;
+					}
+					else {
+						endIndex = k;
+					}
 					startPositionHolder[j] = startIndex;   //at j index, hole began 
 					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+					freeCounter = 0;    //rest freeCounter
 
 				}
 				//case 2: when we start at a free
@@ -263,15 +273,20 @@ void Page::worstAlg(string pName, int pSize) {
 						++freeCounter;
 						++k;
 					}
-					endIndex = k;   //where hole ended
+					if (k >= 32) {   //if hole ends at end of lis
+						endIndex = 0;
+					}
+					else {
+						endIndex = k;
+					}
 					startPositionHolder[j] = startIndex;   //at j index, hole began 
 					tempLengthHole[j] = freeCounter;      //at j index, hole is length of freeCounter
+					freeCounter = 0;    //rest freeCounter
 				}
-				startIndex = endIndex;       //~keeping track of where to pick up next hole from
 			}
 		}
 		//find largest length hole
-		for (int i = 0; i < fragmentCounter; ++i) {
+		for (int i = 0; i < 32; ++i) {
 			if (tempLengthHole[i] > max) {
 				max = tempLengthHole[i];   //max hole
 				startIndex = startPositionHolder[i];   //position of max hole 
@@ -451,6 +466,22 @@ int main(int argc, char * argv[])
 	list * linkedList = new list();
 	string alg = "best";
 
+	if (argc == 2) {
+		if (strncmp(argv[1], "worst", 5) == 0) {
+			std::cout << "Using worst fit algorithm. \n";
+			alg = "worst";
+		}
+		else if (strncmp(argv[1], "best", 4) == 0) {
+			cout << "Using best fit algorithm. \n";
+		}
+		else {
+			cout << "Invalid or missing arguments. Using default: best fit algorithm \n";
+		}
+	}
+	else {
+		std::cout << "Invalid or missing arguments. Using default: best fit algorithm \n";
+	}
+
 	string pName;
 	int pSize;
 	int myInput;
@@ -478,6 +509,12 @@ int main(int argc, char * argv[])
 			cin >> pName;
 			cout << "Program size (KB) - ";
 			cin >> pSize;
+			while (cin.fail()) {
+				cin.clear();
+				cin.ignore(1997, '\n');
+				cout << "Invalid input.  Try again: " << endl;
+				cin >> pSize;
+			}
 			int pageSize = 0;
 			if (pSize % 4 != 0) {
 				pageSize = (pSize / 4) + 1;
